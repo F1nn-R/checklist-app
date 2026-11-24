@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { ChecklistDB, type Task } from '../db';
 import { addDays } from './dates';
-import { isDueOn, ruleMatches } from './schedule';
+import { dueStatus, isDueOn, ruleMatches } from './schedule';
 import { bestStreak, completionRate, currentStreak } from './streak';
 import { findCompletion, toggle } from './completion';
 
@@ -37,6 +37,35 @@ describe('schedule', () => {
   });
 });
 
+describe('due dates', () => {
+  const t = (over: Partial<Task>) => ({ repeat: null, parentId: null, startDate: '2026-11-01', dueDate: '2026-11-10', ...over }) as Task;
+  it('counts days left and flags overdue only when not done', () => {
+    expect(dueStatus(t({}), '2026-11-08', false)).toEqual({ daysLeft: 2, overdue: false });
+    expect(dueStatus(t({}), '2026-11-10', false)).toEqual({ daysLeft: 0, overdue: false });
+    expect(dueStatus(t({}), '2026-11-11', false)).toEqual({ daysLeft: -1, overdue: true });
+    expect(dueStatus(t({}), '2026-11-11', true)?.overdue).toBe(false);
+  });
+  it('ignores repeating tasks, subtasks and tasks without a due date', () => {
+    expect(dueStatus(t({ repeat: { kind: 'daily' } }), '2026-11-11', false)).toBeNull();
+    expect(dueStatus(t({ parentId: 'p' }), '2026-11-11', false)).toBeNull();
+    expect(dueStatus(t({ dueDate: null }), '2026-11-11', false)).toBeNull();
+  });
+});
+
+describe('schema upgrade', () => {
+  it('v1 tasks get dueDate: null', async () => {
+    const name = 'upgrade-test-' + Math.random();
+    const { default: Dexie } = await import('dexie');
+    const v1 = new Dexie(name);
+    v1.version(1).stores({ groups: 'id, order', tasks: 'id, groupId, parentId, order', completions: 'id, taskId, date, &[taskId+date]' });
+    await v1.table('tasks').add({ id: 'a', title: 'old', parentId: null, groupId: null, order: 0 });
+    v1.close();
+    const db2 = new ChecklistDB(name);
+    expect((await db2.tasks.get('a'))?.dueDate).toBeNull();
+    db2.close();
+  });
+});
+
 describe('streaks', () => {
   const mwf = { kind: 'weekdays' as const, days: [1, 3, 5] };
   const start = '2026-11-01';
@@ -66,7 +95,7 @@ describe('completion / auto-tick', () => {
   let db: ChecklistDB;
   const day = '2026-11-19';
   const mk = (id: string, parentId: string | null, repeat: Task['repeat'] = { kind: 'daily' }): Task => ({
-    id, parentId, groupId: null, title: id, description: '', info: '', repeat, startDate: '2026-11-01',
+    id, parentId, groupId: null, title: id, description: '', info: '', repeat, startDate: '2026-11-01', dueDate: null,
     order: 0, archived: false, createdAt: 0,
   });
   let parent: Task, a: Task, b: Task;

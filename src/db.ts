@@ -21,9 +21,10 @@ export interface Task {
   parentId: string | null; // set => subtask (one level only)
   title: string;
   description: string;
-  info: string; // markdown, only shown on the detail screen
+  info: string; // plain text, only shown on the detail screen
   repeat: RepeatRule | null; // null => one-off. Ignored on subtasks (they follow the parent)
   startDate: DateStr;
+  dueDate: DateStr | null; // optional deadline; one-off top-level tasks only (added in schema v2)
   order: number;
   archived: boolean;
   createdAt: number;
@@ -49,6 +50,12 @@ export class ChecklistDB extends Dexie {
       tasks: 'id, groupId, parentId, order',
       completions: 'id, taskId, date, &[taskId+date]',
     });
+    // v2: tasks gain an optional `dueDate` (not indexed).
+    this.version(2).stores({}).upgrade((tx) =>
+      tx.table('tasks').toCollection().modify((t: Partial<Task>) => {
+        if (t.dueDate === undefined) t.dueDate = null;
+      }),
+    );
   }
 }
 

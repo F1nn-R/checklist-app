@@ -54,3 +54,13 @@ export function describeRepeat(rule: RepeatRule | null): string {
       return `Monthly on day ${rule.dayOfMonth}`;
   }
 }
+
+/**
+ * Due-date state for a one-off task, or null if it has none (repeating tasks never have one).
+ * `daysLeft` < 0 means overdue; a done task is never overdue.
+ */
+export function dueStatus(task: Task, today: DateStr, done: boolean): { daysLeft: number; overdue: boolean } | null {
+  if (task.repeat || task.parentId || !task.dueDate) return null;
+  const daysLeft = diffDays(today, task.dueDate);
+  return { daysLeft, overdue: !done && daysLeft < 0 };
+}

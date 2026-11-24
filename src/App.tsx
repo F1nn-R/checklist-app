@@ -7,6 +7,7 @@ import TaskDetail from './pages/TaskDetail';
 import TaskEdit from './pages/TaskEdit';
 import Groups from './pages/Groups';
 import Settings from './pages/Settings';
+import PastDays from './pages/PastDays';
 
 const TABS = ['/', '/all', '/groups', '/settings'];
 
@@ -20,6 +21,7 @@ function Shell() {
         <Route path="/all" element={<AllTasks />} />
         <Route path="/groups" element={<Groups />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/past" element={<PastDays />} />
         <Route path="/task/new" element={<TaskEdit key="new" />} />
         <Route path="/task/:id" element={<TaskDetail />} />
         <Route path="/task/:id/edit" element={<TaskEdit />} />

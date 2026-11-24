@@ -10,11 +10,15 @@ A personal checklist **PWA** used mainly on the owner's phone (installed to the 
 - Every push to `main` runs tests, builds and deploys via `.github/workflows/deploy.yml`, live in about a minute. Pushing to `main` = shipping to the user's phone, so run `npm test` and `npm run build` first.
 
 ## Stack
-Vite + React 19 + TypeScript, `vite-plugin-pwa` (Workbox, auto-update), Dexie + `dexie-react-hooks`, `react-router-dom` with **HashRouter** (GitHub Pages has no SPA fallback), `react-markdown` + `remark-gfm`, Vitest + `fake-indexeddb`. Plain CSS with theme tokens in `src/theme.css` (no Tailwind/UI lib).
+Vite + React 19 + TypeScript, `vite-plugin-pwa` (Workbox, auto-update), Dexie + `dexie-react-hooks`, `react-router-dom` with **HashRouter** (GitHub Pages has no SPA fallback), Vitest + `fake-indexeddb`. Plain CSS with theme tokens in `src/theme.css` (no Tailwind/UI lib).
 
 ## Product rules (agreed with the user; don't change without asking)
 - **Groups:** tasks can belong to one group or none. Deleting a group keeps its tasks (they become ungrouped).
-- **Task fields:** title, description (shown in lists) and **full info** (Markdown, shown *only* on the task detail page).
+- **Task fields:** title, description (shown in lists) and **full info** (plain text, no Markdown: too clunky on a phone; shown *only* on the task detail page). No placeholder/example text in the task form's boxes.
+- **Start date** is an off-by-default toggle; when off the task starts on the day it was created.
+- **Due date** (optional toggle) exists for **one-off tasks only**: a "Due …" label, red when overdue. It doesn't affect when the task shows.
+- **Today page** shows only today (no day arrows). Past days live behind the "⋮" menu (top right) on a separate page. There is no browsing of future days; only start/due dates look ahead.
+- **Checked one-off tasks** show archive and delete icon buttons on their row (delete is two-tap).
 - **Repeats:** once, daily, chosen weekdays, every N days (from the start date) or monthly (day 29–31 clamps to the month's last day).
 - **One-off tasks:** shown from the start date until done; once done they show only on the day they were done.
 - **Streaks count scheduled days only:** an unscheduled day never breaks a streak. If today is scheduled but not done yet, it doesn't break the streak either. No "skip day" feature (the user chose not to have one).

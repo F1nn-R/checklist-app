@@ -3,8 +3,8 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { db, newId, type RepeatRule, type Task } from '../db';
 import { useData } from '../data';
 import { deleteTask, syncParent } from '../logic/completion';
-import { todayStr } from '../logic/dates';
-import { BackBar, ConfirmButton, MarkdownView } from '../components/ui';
+import { diffDays, todayStr, toDateStr } from '../logic/dates';
+import { BackBar, ConfirmButton, Switch } from '../components/ui';
 import { RepeatPicker } from '../components/RepeatPicker';
 
 interface SubDraft { id: string; title: string; isNew: boolean }
@@ -23,10 +23,13 @@ export default function TaskEdit() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [info, setInfo] = useState('');
-  const [infoTab, setInfoTab] = useState<'write' | 'preview'>('write');
   const [groupId, setGroupId] = useState<string | null>(params.get('group'));
   const [repeat, setRepeat] = useState<RepeatRule | null>({ kind: 'daily' });
+  // When the start-date toggle is off, the task starts on the day it was created.
+  const [startOn, setStartOn] = useState(false);
   const [startDate, setStartDate] = useState(todayStr());
+  const [dueOn, setDueOn] = useState(false);
+  const [dueDate, setDueDate] = useState(todayStr());
   const [subs, setSubs] = useState<SubDraft[]>([]);
   const [removed, setRemoved] = useState<string[]>([]);
   const [newSub, setNewSub] = useState('');
@@ -41,6 +44,8 @@ export default function TaskEdit() {
       setGroupId(existing.groupId);
       setRepeat(existing.repeat);
       setStartDate(existing.startDate);
+      setStartOn(existing.startDate !== toDateStr(new Date(existing.createdAt)));
+      if (existing.dueDate) { setDueOn(true); setDueDate(existing.dueDate); }
       setSubs((data.subtasksOf.get(existing.id) ?? []).map((s) => ({ id: s.id, title: s.title, isNew: false })));
     } else if (!params.get('group') && data.groups.length === 1) {
       setGroupId(data.groups[0].id);
@@ -52,6 +57,15 @@ export default function TaskEdit() {
 
   const isSub = !!parentId;
   const canSave = title.trim().length > 0;
+  const createdDay = existing ? toDateStr(new Date(existing.createdAt)) : todayStr();
+  const effStart = startOn ? startDate : createdDay;
+  const effDue = !repeat && dueOn ? dueDate : null; // due dates are for one-off tasks only
+
+  const toggleDue = (on: boolean) => {
+    // Default a fresh due date to the start day (or today, if that's later).
+    if (on && !existing?.dueDate) setDueDate(diffDays(todayStr(), effStart) > 0 ? effStart : todayStr());
+    setDueOn(on);
+  };
 
   const addSub = () => {
     const t = newSub.trim();
@@ -73,7 +87,7 @@ export default function TaskEdit() {
     const siblings = data.tasks.filter((t) => t.parentId === (parentId ?? null));
     const base: Task = existing ?? {
       id: taskId, parentId: parentId ?? null, groupId: null, title: '', description: '', info: '',
-      repeat: null, startDate, order: siblings.length ? Math.max(...siblings.map((t) => t.order)) + 1 : 0,
+      repeat: null, startDate: effStart, dueDate: null, order: siblings.length ? Math.max(...siblings.map((t) => t.order)) + 1 : 0,
       archived: false, createdAt: Date.now(),
     };
     const task: Task = {
@@ -83,7 +97,8 @@ export default function TaskEdit() {
       info,
       groupId: isSub ? parent?.groupId ?? null : groupId,
       repeat: isSub ? null : repeat,
-      startDate: isSub ? base.startDate : startDate,
+      startDate: isSub ? base.startDate : effStart,
+      dueDate: isSub ? null : effDue,
     };
     await db.transaction('rw', db.tasks, db.completions, async () => {
       await db.tasks.put(task);
@@ -94,7 +109,7 @@ export default function TaskEdit() {
           await db.tasks.put({
             ...(prev ?? {
               id: s.id, parentId: taskId, description: '', info: '', repeat: null,
-              startDate: task.startDate, archived: false, createdAt: Date.now(),
+              startDate: task.startDate, dueDate: null, archived: false, createdAt: Date.now(),
             }),
             title: s.title, order: i, groupId: task.groupId,
           } as Task);
@@ -129,14 +144,14 @@ export default function TaskEdit() {
 
       <div className="field">
         <label htmlFor="title">Title</label>
-        <input id="title" className="input" value={title} autoFocus={isNew} placeholder="e.g. Morning workout"
+        <input id="title" className="input" value={title} autoFocus={isNew}
           onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && save()} />
       </div>
 
       <div className="field">
         <label htmlFor="desc">Description</label>
         <textarea id="desc" className="textarea" rows={2} style={{ minHeight: 60 }} value={description}
-          placeholder="Short summary shown in the list" onChange={(e) => setDescription(e.target.value)} />
+          onChange={(e) => setDescription(e.target.value)} />
       </div>
 
       {!isSub && (
@@ -151,14 +166,29 @@ export default function TaskEdit() {
 
           <div className="field">
             <div className="label">Repeat</div>
-            <RepeatPicker value={repeat} onChange={setRepeat} startDate={startDate} />
+            <RepeatPicker value={repeat} onChange={setRepeat} startDate={effStart} />
           </div>
 
           <div className="field">
-            <label htmlFor="start">{repeat ? 'Starts' : 'Show from'}</label>
-            <input id="start" className="input" type="date" value={startDate} onChange={(e) => e.target.value && setStartDate(e.target.value)} />
-            {!isNew && repeat && <div className="hint">Streaks and history are counted from this date.</div>}
+            <div className="toggle-row">
+              <label htmlFor="start">Start date</label>
+              <Switch on={startOn} onChange={setStartOn} label="Set a start date" />
+            </div>
+            {startOn
+              ? <input id="start" className="input" type="date" value={startDate} onChange={(e) => e.target.value && setStartDate(e.target.value)} />
+              : <div className="hint">{isNew ? 'Starts today.' : 'Starts the day it was created.'}</div>}
+            {!isNew && repeat && startOn && <div className="hint">Streaks and history are counted from this date.</div>}
           </div>
+
+          {!repeat && (
+            <div className="field">
+              <div className="toggle-row">
+                <label htmlFor="due">Due date</label>
+                <Switch on={dueOn} onChange={toggleDue} label="Set a due date" />
+              </div>
+              {dueOn && <input id="due" className="input" type="date" value={dueDate} min={effStart} onChange={(e) => e.target.value && setDueDate(e.target.value)} />}
+            </div>
+          )}
 
           <div className="field">
             <div className="label">Subtasks</div>
@@ -187,17 +217,8 @@ export default function TaskEdit() {
       )}
 
       <div className="field">
-        <div className="row" style={{ marginBottom: 6 }}>
-          <div className="label" style={{ margin: 0, flex: 1, fontSize: 13, fontWeight: 600, color: 'var(--text-dim)' }}>Full info</div>
-          <div className="seg" style={{ padding: 2 }}>
-            <button type="button" className={infoTab === 'write' ? 'on' : ''} style={{ padding: '5px 12px' }} onClick={() => setInfoTab('write')}>Write</button>
-            <button type="button" className={infoTab === 'preview' ? 'on' : ''} style={{ padding: '5px 12px' }} onClick={() => setInfoTab('preview')}>Preview</button>
-          </div>
-        </div>
-        {infoTab === 'write'
-          ? <textarea className="textarea mono" value={info} onChange={(e) => setInfo(e.target.value)}
-              placeholder={'Markdown supported:\n# Heading\n- bullet\n**bold**, [link](https://…)'} />
-          : info.trim() ? <MarkdownView text={info} /> : <p className="faint">Nothing to preview.</p>}
+        <label htmlFor="info">Full info</label>
+        <textarea id="info" className="textarea tall" value={info} onChange={(e) => setInfo(e.target.value)} />
         <div className="hint">Only shown when you open the task.</div>
       </div>
 

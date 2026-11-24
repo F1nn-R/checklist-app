@@ -2,10 +2,17 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db, type Task } from '../db';
 import { isDone, streakInfo, type AppData } from '../data';
-import { toggle } from '../logic/completion';
-import { describeRepeat } from '../logic/schedule';
-import type { DateStr } from '../logic/dates';
-import { Checkbox, StreakBadge } from './ui';
+import { deleteTask, toggle } from '../logic/completion';
+import { describeRepeat, dueStatus } from '../logic/schedule';
+import { parseDate, type DateStr } from '../logic/dates';
+import { ArchiveIcon, Checkbox, ConfirmButton, StreakBadge, TrashIcon } from './ui';
+
+export function dueLabel(dueDate: DateStr, daysLeft: number): string {
+  if (daysLeft === 0) return 'Due today';
+  if (daysLeft === 1) return 'Due tomorrow';
+  if (daysLeft === -1) return 'Due yesterday';
+  return 'Due ' + parseDate(dueDate).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+}
 
 const expandedKey = 'expanded-tasks';
 function loadExpanded(): Set<string> {
@@ -32,6 +39,9 @@ export function TaskRow({ task, data, date, today, checkable = true, showRepeat 
   const done = isDone(data, task, date);
   const { current, repeat } = streakInfo(data, task, today);
   const subsDone = subs.filter((s) => isDone(data, s, date)).length;
+  const due = dueStatus(task, today, done);
+  // Checked one-off tasks offer quick tidy-up buttons.
+  const tidy = checkable && done && !repeat && !task.parentId && !task.archived;
 
   const setOpenPersist = (v: boolean) => { setOpen(v); saveExpanded(task.id, v); };
 
@@ -42,14 +52,23 @@ export function TaskRow({ task, data, date, today, checkable = true, showRepeat 
         <button className="body" onClick={() => nav(`/task/${task.id}`)}>
           <div className="title">{task.title || 'Untitled'}</div>
           {task.description && <div className="desc">{task.description}</div>}
-          {(showRepeat || subs.length > 0) && (
+          {(showRepeat || subs.length > 0 || due) && (
             <div className="meta">
               {showRepeat && <span>{describeRepeat(task.repeat)}</span>}
+              {due && task.dueDate && (
+                <span className={`due ${due.overdue ? 'overdue' : !done && due.daysLeft <= 1 ? 'soon' : ''}`}>{dueLabel(task.dueDate, due.daysLeft)}</span>
+              )}
               {subs.length > 0 && <span className="sub-count">{subsDone}/{subs.length}</span>}
             </div>
           )}
         </button>
         {repeat && <StreakBadge n={current} />}
+        {tidy && (
+          <>
+            <button className="icon-btn" aria-label="Archive task" title="Archive" onClick={() => db.tasks.update(task.id, { archived: true })}><ArchiveIcon /></button>
+            <ConfirmButton className="icon-btn row-action danger" label="Delete task" armedText="Delete?" onConfirm={() => deleteTask(db, task.id)}><TrashIcon /></ConfirmButton>
+          </>
+        )}
         {subs.length > 0 && (
           <button className="icon-btn" aria-label={open ? 'Collapse subtasks' : 'Expand subtasks'} aria-expanded={open} onClick={() => setOpenPersist(!open)}>
             <span className={`chev ${open ? 'open' : ''}`}>▶</span>

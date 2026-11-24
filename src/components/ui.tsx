@@ -1,7 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 
 export function Checkbox({ on, onToggle, disabled, size, round, label }: {
   on: boolean; onToggle: () => void; disabled?: boolean; size?: 'small'; round?: boolean; label: string;
@@ -26,18 +24,43 @@ export function StreakBadge({ n }: { n: number }) {
   return <span className={`streak ${n ? '' : 'zero'}`} title={`${n} streak`}>🔥{n}</span>;
 }
 
-export function MarkdownView({ text }: { text: string }) {
+/** On/off toggle. */
+export function Switch({ on, onChange, label }: { on: boolean; onChange: (v: boolean) => void; label: string }) {
   return (
-    <div className="markdown">
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        components={{ a: (p) => <a {...p} target="_blank" rel="noreferrer" /> }}
-      >
-        {text}
-      </ReactMarkdown>
+    <button type="button" role="switch" aria-checked={on} aria-label={label} className={`switch ${on ? 'on' : ''}`} onClick={() => onChange(!on)}>
+      <span className="knob" />
+    </button>
+  );
+}
+
+/** "⋮" button that opens a small dropdown of actions. */
+export function MoreMenu({ items }: { items: { label: string; onSelect: () => void }[] }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="more">
+      <button type="button" className="icon-btn" aria-label="More" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(!open)}>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="12" cy="19" r="2" /></svg>
+      </button>
+      {open && (
+        <>
+          <div className="more-backdrop" onClick={() => setOpen(false)} />
+          <div className="more-menu" role="menu">
+            {items.map((it) => (
+              <button key={it.label} type="button" role="menuitem" onClick={() => { setOpen(false); it.onSelect(); }}>{it.label}</button>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }
+
+export const ArchiveIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 4h18v4H3zM5 8v11a1 1 0 001 1h12a1 1 0 001-1V8M10 12h4" /></svg>
+);
+export const TrashIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 002 2h6a2 2 0 002-2l1-12M9 7V4h6v3" /></svg>
+);
 
 export function BackBar({ title, right }: { title?: string; right?: ReactNode }) {
   const nav = useNavigate();
@@ -53,8 +76,8 @@ export function BackBar({ title, right }: { title?: string; right?: ReactNode })
 }
 
 /** Two-tap confirm button (avoids blocking browser dialogs). */
-export function ConfirmButton({ children, armedText, onConfirm, className = 'btn danger' }: {
-  children: ReactNode; armedText: string; onConfirm: () => void; className?: string;
+export function ConfirmButton({ children, armedText, onConfirm, className = 'btn danger', label }: {
+  children: ReactNode; armedText: ReactNode; onConfirm: () => void; className?: string; label?: string;
 }) {
   const [armed, setArmed] = useState(false);
   useEffect(() => {
@@ -63,7 +86,7 @@ export function ConfirmButton({ children, armedText, onConfirm, className = 'btn
     return () => clearTimeout(t);
   }, [armed]);
   return (
-    <button type="button" className={`${className} ${armed ? 'armed' : ''}`} onClick={() => (armed ? onConfirm() : setArmed(true))}>
+    <button type="button" aria-label={label} className={`${className} ${armed ? 'armed' : ''}`} onClick={() => (armed ? onConfirm() : setArmed(true))}>
       {armed ? armedText : children}
     </button>
   );

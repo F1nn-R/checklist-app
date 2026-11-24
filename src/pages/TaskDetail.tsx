@@ -2,9 +2,10 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { db } from '../db';
 import { isDone, isDueTop, parentOf, streakInfo, useData, useToday } from '../data';
 import { toggle } from '../logic/completion';
-import { describeRepeat } from '../logic/schedule';
+import { describeRepeat, dueStatus } from '../logic/schedule';
 import { parseDate } from '../logic/dates';
-import { BackBar, Checkbox, MarkdownView } from '../components/ui';
+import { BackBar, Checkbox } from '../components/ui';
+import { dueLabel } from '../components/TaskRow';
 import { HistoryCalendar } from '../components/HistoryCalendar';
 
 export default function TaskDetail() {
@@ -25,6 +26,7 @@ export default function TaskDetail() {
   const done = isDone(data, task, today);
   const dueToday = isDueTop(data, owner, today) || (!st.repeat && !done);
   const oneOffDone = !st.repeat ? data.firstDone.get(task.id) : undefined;
+  const due = dueStatus(task, today, done);
 
   return (
     <div className="page no-nav">
@@ -39,6 +41,7 @@ export default function TaskDetail() {
       <div className="chips">
         {group && <span className="chip"><span className="dot" style={{ background: group.color }} />{group.name}</span>}
         <span className="chip">🔁 {describeRepeat(st.repeat)}{parent ? ' (from parent)' : ''}</span>
+        {due && task.dueDate && <span className={`chip due ${due.overdue ? 'overdue' : ''}`}>📅 {dueLabel(task.dueDate, due.daysLeft)}</span>}
         {task.archived && <span className="chip">Archived</span>}
       </div>
 
@@ -87,7 +90,7 @@ export default function TaskDetail() {
       <div className="section">
         <h2>Full info</h2>
         {task.info.trim()
-          ? <MarkdownView text={task.info} />
+          ? <p className="info-text">{task.info}</p>
           : <p className="faint">No info yet. <Link to={`/task/${task.id}/edit`}>Add some</Link>.</p>}
       </div>
 

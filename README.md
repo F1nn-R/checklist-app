@@ -1,6 +1,6 @@
 # Checklist
 
-An offline-first checklist PWA with groups, repeating tasks, streaks, subtasks and Markdown notes. Data is stored on the device (IndexedDB).
+An offline-first checklist PWA with groups, repeating tasks, streaks, subtasks, due dates and notes. Data is stored on the device (IndexedDB).
 
 ## Develop
 ```
