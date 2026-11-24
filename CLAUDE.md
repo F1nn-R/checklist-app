@@ -67,5 +67,6 @@ Even then: **secrets never go in the repo, public or private.** Use environment 
 ## Next steps (the user will give details when ready; ask, don't guess)
 1. **Improve the design.** The current dark theme is a functional first pass. Most visual changes start in the `:root` tokens in `src/theme.css`.
 2. **Change, improve and add features.** Specifics will come from the user. Check new ideas against the product rules above and confirm any change to them.
+3. **Persistent storage (agreed, not built yet).** Call `navigator.storage.persist()` at startup (e.g. in `src/main.tsx`, guarded with `?.` and wrapped in try/catch) so the browser doesn't evict IndexedDB when the phone runs low on storage. It doesn't stop the user from clearing site data manually. Optionally show the result in Settings ("Storage: protected / not protected").
 
 Ideas raised earlier but **not** requested (don't build unprompted): reminders/notifications, drag-to-reorder (currently ↑/↓ buttons), a weekly overview, "skip day" for streaks, cloud sync.
