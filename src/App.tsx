@@ -7,6 +7,7 @@ import TaskEdit from './pages/TaskEdit';
 import Groups from './pages/Groups';
 import Settings from './pages/Settings';
 import PastDays from './pages/PastDays';
+import { ShaderBackground } from './components/ShaderBackground';
 
 function Shell() {
   const { pathname } = useLocation();
@@ -32,6 +33,7 @@ function Shell() {
 export default function App() {
   return (
     <HashRouter>
+      <ShaderBackground />
       <Shell />
     </HashRouter>
   );
