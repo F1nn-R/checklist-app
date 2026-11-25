@@ -1,5 +1,7 @@
-import { useEffect, useState, type ReactNode } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { db } from '../db';
+import { createGroup } from '../data';
 
 export function Checkbox({ on, onToggle, disabled, size, round, label }: {
   on: boolean; onToggle: () => void; disabled?: boolean; size?: 'small'; round?: boolean; label: string;
@@ -30,28 +32,6 @@ export function Switch({ on, onChange, label }: { on: boolean; onChange: (v: boo
     <button type="button" role="switch" aria-checked={on} aria-label={label} className={`switch ${on ? 'on' : ''}`} onClick={() => onChange(!on)}>
       <span className="knob" />
     </button>
-  );
-}
-
-/** "⋮" button that opens a small dropdown of actions. */
-export function MoreMenu({ items }: { items: { label: string; onSelect: () => void }[] }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="more">
-      <button type="button" className="icon-btn" aria-label="More" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(!open)}>
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="12" cy="19" r="2" /></svg>
-      </button>
-      {open && (
-        <>
-          <div className="more-backdrop" onClick={() => setOpen(false)} />
-          <div className="more-menu" role="menu">
-            {items.map((it) => (
-              <button key={it.label} type="button" role="menuitem" onClick={() => { setOpen(false); it.onSelect(); }}>{it.label}</button>
-            ))}
-          </div>
-        </>
-      )}
-    </div>
   );
 }
 
@@ -93,31 +73,96 @@ export function ConfirmButton({ children, armedText, onConfirm, className = 'btn
 }
 
 const icons = {
-  today: <path d="M9 11l3 3 8-8M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V5a2 2 0 012-2h9" />,
+  past: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
   all: <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />,
+  archived: <path d="M3 4h18v4H3zM5 8v11a1 1 0 001 1h12a1 1 0 001-1V8M10 12h4" />,
   groups: <path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />,
   settings: <><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z" /></>,
 };
 
-export function BottomNav() {
+/** Closes on Escape and stops the page behind from scrolling while `open`. */
+function useOverlay(open: boolean, close: () => void) {
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
+    document.addEventListener('keydown', onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [open, close]);
+}
+
+/** Hamburger button that slides a navigation panel in from the right. */
+export function SideMenu() {
+  const nav = useNavigate();
+  const [open, setOpen] = useState(false);
+  const close = useCallback(() => setOpen(false), []);
+  useOverlay(open, close);
   const items: [string, keyof typeof icons, string][] = [
-    ['/', 'today', 'Today'], ['/all', 'all', 'All tasks'], ['/groups', 'groups', 'Groups'], ['/settings', 'settings', 'Settings'],
+    ['/past', 'past', 'Past days'], ['/all', 'all', 'All tasks'], ['/archived', 'archived', 'Archived'],
+    ['/groups', 'groups', 'Groups'], ['/settings', 'settings', 'Settings'],
   ];
   return (
-    <nav className="bottom-nav">
-      <div className="inner">
+    <>
+      <button type="button" className="icon-btn" aria-label="Menu" aria-expanded={open} onClick={() => setOpen(true)}>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
+      </button>
+      <div className={`drawer-backdrop ${open ? 'open' : ''}`} onClick={close} />
+      <nav className={`drawer ${open ? 'open' : ''}`} aria-label="Menu" aria-hidden={!open} inert={!open}>
+        <div className="drawer-head">
+          <button type="button" className="icon-btn" aria-label="Close menu" onClick={close}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+          </button>
+        </div>
         {items.map(([to, icon, label]) => (
-          <NavLink key={to} to={to} end>
+          <button key={to} type="button" className="drawer-item" onClick={() => { setOpen(false); nav(to); }}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{icons[icon]}</svg>
             {label}
-          </NavLink>
+          </button>
         ))}
-      </div>
-    </nav>
+      </nav>
+    </>
   );
 }
 
-export function Fab({ to }: { to: string }) {
+/** "+" button offering a new task or a new group. */
+export function AddButton() {
   const nav = useNavigate();
-  return <button className="fab" aria-label="New task" onClick={() => nav(to)}>+</button>;
+  const [mode, setMode] = useState<'closed' | 'menu' | 'group'>('closed');
+  const [name, setName] = useState('');
+  const close = useCallback(() => { setMode('closed'); setName(''); }, []);
+  useOverlay(mode !== 'closed', close);
+
+  const addGroup = async () => {
+    if (!name.trim()) return;
+    await createGroup(name, await db.groups.toArray());
+    close();
+  };
+
+  return (
+    <>
+      {mode !== 'closed' && <div className="sheet-backdrop" onClick={close} />}
+      {mode === 'menu' && (
+        <div className="add-menu" role="menu">
+          <button type="button" role="menuitem" onClick={() => { close(); nav('/task/new'); }}>New task</button>
+          <button type="button" role="menuitem" onClick={() => setMode('group')}>New group</button>
+        </div>
+      )}
+      {mode === 'group' && (
+        <form className="sheet" onSubmit={(e) => { e.preventDefault(); addGroup(); }}>
+          <label htmlFor="new-group" className="sheet-title">New group</label>
+          <input id="new-group" className="input" autoFocus value={name} onChange={(e) => setName(e.target.value)} />
+          <div className="btn-row" style={{ marginTop: 12 }}>
+            <button type="button" className="btn" onClick={close}>Cancel</button>
+            <button type="submit" className="btn primary" disabled={!name.trim()}>Add</button>
+          </div>
+        </form>
+      )}
+      <button className={`fab ${mode === 'menu' ? 'open' : ''}`} aria-label={mode === 'menu' ? 'Close' : 'Add'} aria-expanded={mode === 'menu'}
+        onClick={() => (mode === 'menu' ? close() : setMode('menu'))}><span>+</span></button>
+    </>
+  );
 }

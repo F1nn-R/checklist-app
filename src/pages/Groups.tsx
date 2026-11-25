@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { db, newId, type Group } from '../db';
-import { GROUP_COLORS, useData } from '../data';
-import { ConfirmButton } from '../components/ui';
+import { db, type Group } from '../db';
+import { createGroup, GROUP_COLORS, useData } from '../data';
+import { BackBar, ConfirmButton } from '../components/ui';
 
 function GroupName({ g }: { g: Group }) {
   const [v, setV] = useState(g.name);
@@ -28,10 +28,7 @@ export default function Groups() {
     const n = name.trim();
     if (!n) return;
     setName('');
-    await db.groups.add({
-      id: newId(), name: n, color: GROUP_COLORS[groups.length % GROUP_COLORS.length],
-      order: groups.length ? Math.max(...groups.map((g) => g.order)) + 1 : 0, archived: false,
-    });
+    await createGroup(n, groups);
   };
   const move = async (i: number, d: number) => {
     const j = i + d;
@@ -51,8 +48,8 @@ export default function Groups() {
   };
 
   return (
-    <div className="page">
-      <div className="topbar"><h1>Groups</h1></div>
+    <div className="page no-nav">
+      <BackBar title="Groups" />
 
       <div className="list-edit" style={{ marginBottom: 16 }}>
         {groups.map((g, i) => {

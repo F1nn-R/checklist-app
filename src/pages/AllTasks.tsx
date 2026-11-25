@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { useData, useToday } from '../data';
 import { TaskRow } from '../components/TaskRow';
-import { Fab } from '../components/ui';
+import { AddButton, BackBar } from '../components/ui';
 import { GroupedList } from '../components/GroupedList';
 
-export default function AllTasks() {
+/** Every task regardless of schedule (`archived=false`), or the archived ones. Opened from the side menu. */
+export default function AllTasks({ archived }: { archived: boolean }) {
   const data = useData();
   const today = useToday();
-  const [archived, setArchived] = useState(false);
   const [q, setQ] = useState('');
 
   const query = q.trim().toLowerCase();
@@ -19,20 +19,16 @@ export default function AllTasks() {
   });
 
   return (
-    <div className="page">
-      <div className="topbar"><h1>All tasks</h1></div>
+    <div className={`page ${archived ? 'no-nav' : ''}`}>
+      <BackBar title={archived ? 'Archived' : 'All tasks'} />
       <div className="field">
         <input className="input" type="search" placeholder="Search tasks" value={q} onChange={(e) => setQ(e.target.value)} />
       </div>
-      <div className="seg" style={{ marginBottom: 16 }}>
-        <button className={!archived ? 'on' : ''} onClick={() => setArchived(false)}>Active</button>
-        <button className={archived ? 'on' : ''} onClick={() => setArchived(true)}>Archived</button>
-      </div>
       {data.ready && tasks.length === 0 && <div className="empty"><p>{query ? 'No matches.' : archived ? 'No archived tasks.' : 'No tasks yet.'}</p></div>}
-      <GroupedList data={data} tasks={tasks} storageKey="all">
+      <GroupedList data={data} tasks={tasks} storageKey={archived ? 'archived' : 'all'}>
         {(t) => <TaskRow key={t.id} task={t} data={data} date={today} today={today} showRepeat />}
       </GroupedList>
-      <Fab to="/task/new" />
+      {!archived && <AddButton />}
     </div>
   );
 }

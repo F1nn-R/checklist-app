@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { ChecklistDB, type Task } from '../db';
-import { addDays } from './dates';
+import { addDays, formatShort } from './dates';
 import { dueStatus, isDueOn, ruleMatches } from './schedule';
 import { bestStreak, completionRate, currentStreak } from './streak';
 import { findCompletion, toggle } from './completion';
@@ -132,5 +132,12 @@ describe('completion / auto-tick', () => {
   it('subtasks follow the parent schedule per day', async () => {
     await toggle(db, a, day);
     expect(await done(a, addDays(day, 1))).toBe(false);
+  });
+});
+
+describe('dates', () => {
+  it('formatShort gives dd.mm.yy', () => {
+    expect(formatShort('2026-11-25')).toBe('25.11.26');
+    expect(formatShort('2027-01-05')).toBe('05.01.27');
   });
 });

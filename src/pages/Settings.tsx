@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { exportBackup, importBackup, parseBackup, type Backup } from '../backup';
 import { useData } from '../data';
-import { ConfirmButton } from '../components/ui';
+import { BackBar, ConfirmButton } from '../components/ui';
 
 export default function Settings() {
   const data = useData();
@@ -39,8 +39,8 @@ export default function Settings() {
   const doneTotal = [...data.doneDates.values()].reduce((n, s) => n + s.size, 0);
 
   return (
-    <div className="page">
-      <div className="topbar"><h1>Settings</h1></div>
+    <div className="page no-nav">
+      <BackBar title="Settings" />
 
       <div className="section">
         <h2>Backup</h2>

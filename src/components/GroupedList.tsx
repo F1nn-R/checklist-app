@@ -6,9 +6,12 @@ function loadCollapsed(key: string): Set<string> {
   try { return new Set(JSON.parse(localStorage.getItem('collapsed-' + key) ?? '[]')); } catch { return new Set(); }
 }
 
-/** Renders tasks under collapsible group headers, in group order; ungrouped tasks go last. */
-export function GroupedList({ data, tasks, storageKey, children }: {
-  data: AppData; tasks: Task[]; storageKey: string; children: (t: Task) => ReactNode;
+/**
+ * Renders tasks under collapsible group headers, in group order; ungrouped tasks go last.
+ * With `emptyText`, groups with no tasks still show (with that text) instead of being hidden.
+ */
+export function GroupedList({ data, tasks, storageKey, emptyText, children }: {
+  data: AppData; tasks: Task[]; storageKey: string; emptyText?: string; children: (t: Task) => ReactNode;
 }) {
   const [collapsed, setCollapsed] = useState(() => loadCollapsed(storageKey));
   const toggle = (id: string) => {
@@ -22,7 +25,7 @@ export function GroupedList({ data, tasks, storageKey, children }: {
   const sections = [
     ...data.groups.map((g) => ({ id: g.id, name: g.name, color: g.color, items: tasks.filter((t) => t.groupId === g.id) })),
     { id: '_none', name: 'No group', color: 'var(--text-faint)', items: tasks.filter((t) => !t.groupId || !groupIds.has(t.groupId)) },
-  ].filter((s) => s.items.length);
+  ].filter((s) => s.items.length || (emptyText && s.id !== '_none'));
 
   const onlyUngrouped = sections.length === 1 && sections[0].id === '_none';
 
@@ -40,7 +43,7 @@ export function GroupedList({ data, tasks, storageKey, children }: {
                 <span className="count">{s.items.length}</span>
               </button>
             )}
-            {(open || onlyUngrouped) && s.items.map(children)}
+            {(open || onlyUngrouped) && (s.items.length ? s.items.map(children) : <p className="group-empty">{emptyText}</p>)}
           </section>
         );
       })}

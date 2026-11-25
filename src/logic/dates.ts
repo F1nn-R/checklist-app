@@ -32,3 +32,9 @@ export function diffDays(a: DateStr, b: DateStr): number {
 export function daysInMonth(year: number, month0: number): number {
   return new Date(year, month0 + 1, 0).getDate();
 }
+
+/** 'YYYY-MM-DD' → 'dd.mm.yy' (e.g. '2026-11-25' → '25.11.26'). */
+export function formatShort(s: DateStr): string {
+  const [y, m, d] = s.split('-');
+  return `${d}.${m}.${y.slice(-2)}`;
+}

@@ -17,7 +17,9 @@ Vite + React 19 + TypeScript, `vite-plugin-pwa` (Workbox, auto-update), Dexie + 
 - **Task fields:** title, description (shown in lists) and **full info** (plain text, no Markdown: too clunky on a phone; shown *only* on the task detail page). No placeholder/example text in the task form's boxes.
 - **Start date** is an off-by-default toggle; when off the task starts on the day it was created.
 - **Due date** (optional toggle) exists for **one-off tasks only**: a "Due …" label, red when overdue. It doesn't affect when the task shows.
-- **Today page** shows only today (no day arrows). Past days live behind the "⋮" menu (top right) on a separate page. There is no browsing of future days; only start/due dates look ahead.
+- **Navigation:** no bottom bar. The home page (today) is the only top-level page; a hamburger (top right) opens a sidebar from the right with Past days, All tasks, Archived, Groups and Settings.
+- **Home page** shows only today (no day arrows), titled with the date as `dd.mm.yy`. Every group is shown, even with nothing due today. The **+** button offers "New task" or "New group". There is no browsing of future days; only start/due dates look ahead.
+- **All tasks / Archived** (sidebar) are the way to reach tasks not scheduled today and archived tasks.
 - **Checked one-off tasks** show archive and delete icon buttons on their row (delete is two-tap).
 - **Repeats:** once, daily, chosen weekdays, every N days (from the start date) or monthly (day 29–31 clamps to the month's last day).
 - **One-off tasks:** shown from the start date until done; once done they show only on the day they were done.

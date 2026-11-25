@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db, type Completion, type Group, type Task } from './db';
+import { db, newId, type Completion, type Group, type Task } from './db';
 import { todayStr, type DateStr } from './logic/dates';
 import { effective, isDueOn } from './logic/schedule';
 import { bestStreak, completionRate, currentStreak } from './logic/streak';
@@ -93,3 +93,13 @@ export function useToday(): DateStr {
 }
 
 export const GROUP_COLORS = ['#6c8cff', '#3ecf8e', '#ffad42', '#ff6b6b', '#c77dff', '#4cc9f0', '#f72585', '#a3a3a3'];
+
+/** Adds a group at the end of the list, cycling through the default colours. */
+export async function createGroup(name: string, existing: Group[]): Promise<void> {
+  const n = name.trim();
+  if (!n) return;
+  await db.groups.add({
+    id: newId(), name: n, color: GROUP_COLORS[existing.length % GROUP_COLORS.length],
+    order: existing.length ? Math.max(...existing.map((g) => g.order)) + 1 : 0, archived: false,
+  });
+}

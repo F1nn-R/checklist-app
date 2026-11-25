@@ -1,6 +1,5 @@
 import { HashRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
-import { BottomNav } from './components/ui';
 import Today from './pages/Today';
 import AllTasks from './pages/AllTasks';
 import TaskDetail from './pages/TaskDetail';
@@ -9,8 +8,6 @@ import Groups from './pages/Groups';
 import Settings from './pages/Settings';
 import PastDays from './pages/PastDays';
 
-const TABS = ['/', '/all', '/groups', '/settings'];
-
 function Shell() {
   const { pathname } = useLocation();
   useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
@@ -18,7 +15,8 @@ function Shell() {
     <div className="app">
       <Routes>
         <Route path="/" element={<Today />} />
-        <Route path="/all" element={<AllTasks />} />
+        <Route path="/all" element={<AllTasks key="all" archived={false} />} />
+        <Route path="/archived" element={<AllTasks key="archived" archived />} />
         <Route path="/groups" element={<Groups />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/past" element={<PastDays />} />
@@ -27,7 +25,6 @@ function Shell() {
         <Route path="/task/:id/edit" element={<TaskEdit />} />
         <Route path="*" element={<Today />} />
       </Routes>
-      {TABS.includes(pathname) && <BottomNav />}
     </div>
   );
 }

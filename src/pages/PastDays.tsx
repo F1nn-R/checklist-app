@@ -5,7 +5,7 @@ import { TaskRow } from '../components/TaskRow';
 import { BackBar } from '../components/ui';
 import { GroupedList } from '../components/GroupedList';
 
-/** Browse and correct earlier days. Opened from the "⋮" menu on Today; never shows today or the future. */
+/** Browse and correct earlier days. Opened from the side menu on the home page; never shows today or the future. */
 export default function PastDays() {
   const data = useData();
   const today = useToday();
