@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useId, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../db';
 import { createGroup } from '../data';
@@ -22,8 +22,24 @@ export function Checkbox({ on, onToggle, disabled, size, round, label }: {
   );
 }
 
+/** Blue flame (an SVG: there is no blue flame emoji). Greyed out when `off`. */
+export function Flame({ off, size = 14 }: { off?: boolean; size?: number }) {
+  const id = useId();
+  return (
+    <svg className={`flame ${off ? 'off' : ''}`} width={size} height={size * 1.2} viewBox="0 0 20 24" aria-hidden="true">
+      <defs>
+        <linearGradient id={id} x1="0" y1="1" x2="0" y2="0">
+          <stop offset="0" stopColor="#1d5bff" /><stop offset="1" stopColor="#4cc2ff" />
+        </linearGradient>
+      </defs>
+      <path className="outer" fill={`url(#${id})`} d="M10 1c1 4.2 6.8 6.9 6.8 13.3A6.8 6.8 0 0 1 3.2 14.3c0-3.1 1.6-5 3-6.6.3 2 1.2 3.2 2.4 3.6C8.2 7.6 9 4.1 10 1z" />
+      <path className="inner" fill="#d6f2ff" d="M10 11.2c.6 2.2 3.4 3.4 3.4 6.4a3.4 3.4 0 0 1-6.8 0c0-1.5.8-2.6 1.6-3.4.2 1 .7 1.6 1.3 1.8-.2-1.7.1-3.4.5-4.8z" />
+    </svg>
+  );
+}
+
 export function StreakBadge({ n }: { n: number }) {
-  return <span className={`streak ${n ? '' : 'zero'}`} title={`${n} streak`}>🔥{n}</span>;
+  return <span className={`streak ${n ? '' : 'zero'}`} title={`${n} streak`}><Flame off={!n} />{n}</span>;
 }
 
 /** On/off toggle. */

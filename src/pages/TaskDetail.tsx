@@ -4,7 +4,7 @@ import { isDone, isDueTop, parentOf, streakInfo, useData, useToday } from '../da
 import { toggle } from '../logic/completion';
 import { describeRepeat, dueStatus } from '../logic/schedule';
 import { parseDate } from '../logic/dates';
-import { BackBar, Checkbox } from '../components/ui';
+import { BackBar, Checkbox, Flame } from '../components/ui';
 import { dueLabel } from '../components/TaskRow';
 import { HistoryCalendar } from '../components/HistoryCalendar';
 
@@ -54,7 +54,7 @@ export default function TaskDetail() {
 
       {st.repeat && (
         <div className="stats">
-          <div className="stat"><div className="v" style={{ color: st.current ? 'var(--streak)' : undefined }}>🔥{st.current}</div><div className="l">Current streak</div></div>
+          <div className="stat"><div className="v streak-v" style={{ color: st.current ? 'var(--flame)' : undefined }}><Flame off={!st.current} size={18} />{st.current}</div><div className="l">Current streak</div></div>
           <div className="stat"><div className="v">{st.best}</div><div className="l">Best streak</div></div>
           <div className="stat"><div className="v">{st.rate == null ? '–' : Math.round(st.rate * 100) + '%'}</div><div className="l">Completion</div></div>
         </div>

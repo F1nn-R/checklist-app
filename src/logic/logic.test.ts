@@ -2,6 +2,7 @@ import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { ChecklistDB, type Task } from '../db';
 import { addDays, formatShort } from './dates';
+import { dropIndex, moveItem } from './reorder';
 import { dueStatus, isDueOn, ruleMatches } from './schedule';
 import { bestStreak, completionRate, currentStreak } from './streak';
 import { findCompletion, toggle } from './completion';
@@ -139,5 +140,23 @@ describe('dates', () => {
   it('formatShort gives dd.mm.yy', () => {
     expect(formatShort('2026-11-25')).toBe('25.11.26');
     expect(formatShort('2027-01-05')).toBe('05.01.27');
+  });
+});
+
+describe('reorder', () => {
+  it('moveItem moves forward and back without mutating', () => {
+    const a = ['a', 'b', 'c', 'd'];
+    expect(moveItem(a, 0, 2)).toEqual(['b', 'c', 'a', 'd']);
+    expect(moveItem(a, 3, 0)).toEqual(['d', 'a', 'b', 'c']);
+    expect(moveItem(a, 1, 1)).toEqual(a);
+    expect(moveItem(a, 1, 99)).toEqual(['a', 'c', 'd', 'b']);
+    expect(a).toEqual(['a', 'b', 'c', 'd']);
+  });
+  it('dropIndex rounds to the nearest row and clamps', () => {
+    expect(dropIndex(1, 0, 60, 4)).toBe(1);
+    expect(dropIndex(1, 29, 60, 4)).toBe(1);
+    expect(dropIndex(1, 31, 60, 4)).toBe(2);
+    expect(dropIndex(1, -200, 60, 4)).toBe(0);
+    expect(dropIndex(1, 500, 60, 4)).toBe(3);
   });
 });
