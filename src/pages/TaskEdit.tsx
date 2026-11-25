@@ -6,6 +6,8 @@ import { deleteTask, syncParent } from '../logic/completion';
 import { diffDays, todayStr, toDateStr } from '../logic/dates';
 import { BackBar, ConfirmButton, Switch } from '../components/ui';
 import { RepeatPicker } from '../components/RepeatPicker';
+import { DragHandle, useDragReorder } from '../components/DragReorder';
+import { moveItem } from '../logic/reorder';
 
 interface SubDraft { id: string; title: string; isNew: boolean }
 
@@ -31,6 +33,8 @@ export default function TaskEdit() {
   const [dueOn, setDueOn] = useState(false);
   const [dueDate, setDueDate] = useState(todayStr());
   const [subs, setSubs] = useState<SubDraft[]>([]);
+  // Hook stays above the early "not found" return below.
+  const subDnd = useDragReorder(subs.length, (from, to) => setSubs((cur) => moveItem(cur, from, to)));
   const [removed, setRemoved] = useState<string[]>([]);
   const [newSub, setNewSub] = useState('');
 
@@ -72,13 +76,6 @@ export default function TaskEdit() {
     if (!t) return;
     setSubs([...subs, { id: newId(), title: t, isNew: true }]);
     setNewSub('');
-  };
-  const moveSub = (i: number, d: number) => {
-    const j = i + d;
-    if (j < 0 || j >= subs.length) return;
-    const next = [...subs];
-    [next[i], next[j]] = [next[j], next[i]];
-    setSubs(next);
   };
 
   const save = async () => {
@@ -192,13 +189,12 @@ export default function TaskEdit() {
 
           <div className="field">
             <div className="label">Subtasks</div>
-            <div className="list-edit">
+            <div ref={subDnd.listRef} className={`list-edit reorderable ${subDnd.dragging ? 'dragging' : ''}`}>
               {subs.map((s, i) => (
-                <div key={s.id} className="item">
+                <div key={s.id} data-drag-item className={`item ${subDnd.isLifted(i) ? 'lifted' : ''}`} style={subDnd.itemStyle(i)}>
+                  {subs.length > 1 && <DragHandle {...subDnd.handleProps(i, s.title || 'subtask')} />}
                   <input className="name input-bare" value={s.title} aria-label="Subtask title"
                     onChange={(e) => setSubs(subs.map((x) => (x.id === s.id ? { ...x, title: e.target.value } : x)))} />
-                  <button type="button" className="icon-btn" aria-label="Move up" disabled={i === 0} onClick={() => moveSub(i, -1)}>↑</button>
-                  <button type="button" className="icon-btn" aria-label="Move down" disabled={i === subs.length - 1} onClick={() => moveSub(i, 1)}>↓</button>
                   <button type="button" className="icon-btn" aria-label="Remove subtask" onClick={() => {
                     setSubs(subs.filter((x) => x.id !== s.id));
                     if (!s.isNew) setRemoved([...removed, s.id]);

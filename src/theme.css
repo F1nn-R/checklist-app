@@ -363,14 +363,20 @@ a { color: var(--accent); }
 
 /* Groups page: one glass box per group, drag handle to reorder. */
 .group-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px; }
-.group-list.dragging { user-select: none; -webkit-user-select: none; }
-.group-item { border-radius: var(--radius); position: relative; }
-.group-list.dragging .group-item { transition: transform 0.18s ease; }   /* only while dragging, so the drop snaps cleanly */
-.group-list.dragging .group-item.lifted {
+/* Drag-to-reorder (DragReorder.tsx), shared by groups and subtasks. */
+.reorderable.dragging { user-select: none; -webkit-user-select: none; }
+.reorderable [data-drag-item] { position: relative; }
+.reorderable.dragging [data-drag-item] { transition: transform 0.18s ease; }   /* only while dragging, so the drop snaps cleanly */
+.reorderable.dragging [data-drag-item].lifted {
   transition: none; z-index: 2; scale: 1.02;
   border-color: color-mix(in srgb, var(--accent) 60%, transparent);
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.3), 0 18px 40px rgb(0 0 0 / 0.5), 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
 }
+/* Subtask rows are see-through inside their list; give the lifted one its own glass so it reads above the rest. */
+.list-edit.reorderable.dragging { overflow: visible; }
+.list-edit .item.lifted { background: var(--glass-sheen), rgb(14 16 22 / 0.85); border-radius: var(--radius-sm); border: 1px solid transparent; }
+.list-edit .item .drag-handle { margin-left: -8px; }
+.group-item { border-radius: var(--radius); }
 .group-item .item { display: flex; align-items: center; gap: 6px; padding: 4px 6px; min-height: 56px; }
 .group-item .name.input-bare {
   flex: 1; min-width: 0; background: none; border: none; outline: none; padding: 10px 0;
