@@ -107,13 +107,13 @@ export function SideMenu() {
   ];
   return (
     <>
-      <button type="button" className="icon-btn" aria-label="Menu" aria-expanded={open} onClick={() => setOpen(true)}>
+      <button type="button" className="glass-btn" aria-label="Menu" aria-expanded={open} onClick={() => setOpen(true)}>
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
       </button>
       <div className={`drawer-backdrop ${open ? 'open' : ''}`} onClick={close} />
-      <nav className={`drawer ${open ? 'open' : ''}`} aria-label="Menu" aria-hidden={!open} inert={!open}>
+      <nav className={`drawer glass ${open ? 'open' : ''}`} aria-label="Menu" aria-hidden={!open} inert={!open}>
         <div className="drawer-head">
-          <button type="button" className="icon-btn" aria-label="Close menu" onClick={close}>
+          <button type="button" className="glass-btn" aria-label="Close menu" onClick={close}>
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
           </button>
         </div>
@@ -146,13 +146,13 @@ export function AddButton() {
     <>
       {mode !== 'closed' && <div className="sheet-backdrop" onClick={close} />}
       {mode === 'menu' && (
-        <div className="add-menu" role="menu">
+        <div className="add-menu glass" role="menu">
           <button type="button" role="menuitem" onClick={() => { close(); nav('/task/new'); }}>New task</button>
           <button type="button" role="menuitem" onClick={() => setMode('group')}>New group</button>
         </div>
       )}
       {mode === 'group' && (
-        <form className="sheet" onSubmit={(e) => { e.preventDefault(); addGroup(); }}>
+        <form className="sheet glass" onSubmit={(e) => { e.preventDefault(); addGroup(); }}>
           <label htmlFor="new-group" className="sheet-title">New group</label>
           <input id="new-group" className="input" autoFocus value={name} onChange={(e) => setName(e.target.value)} />
           <div className="btn-row" style={{ marginTop: 12 }}>
@@ -161,8 +161,21 @@ export function AddButton() {
           </div>
         </form>
       )}
-      <button className={`fab ${mode === 'menu' ? 'open' : ''}`} aria-label={mode === 'menu' ? 'Close' : 'Add'} aria-expanded={mode === 'menu'}
+      <button className={`fab glass ${mode === 'menu' ? 'open' : ''}`} aria-label={mode === 'menu' ? 'Close' : 'Add'} aria-expanded={mode === 'menu'}
         onClick={() => (mode === 'menu' ? close() : setMode('menu'))}><span>+</span></button>
     </>
+  );
+}
+
+/** Glass "tube" progress bar. The labels switch colour where the fill passes under them. */
+export function ProgressTube({ done, total }: { done: number; total: number }) {
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  const labels = <><span>{done}/{total}</span><span>{pct}%</span></>;
+  return (
+    <div className="tube glass" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={done} aria-label={`${done} of ${total} done`}>
+      <div className="tube-fill" style={{ width: `${pct}%` }} />
+      <div className="tube-labels">{labels}</div>
+      <div className="tube-labels on-fill" style={{ clipPath: `inset(0 ${100 - pct}% 0 0)` }} aria-hidden="true">{labels}</div>
+    </div>
   );
 }

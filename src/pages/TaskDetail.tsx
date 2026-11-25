@@ -39,7 +39,7 @@ export default function TaskDetail() {
       {task.description && <p className="detail-desc">{task.description}</p>}
 
       <div className="chips">
-        {group && <span className="chip"><span className="dot" style={{ background: group.color }} />{group.name}</span>}
+        {group && <span className="chip">{group.name}</span>}
         <span className="chip">🔁 {describeRepeat(st.repeat)}{parent ? ' (from parent)' : ''}</span>
         {due && task.dueDate && <span className={`chip due ${due.overdue ? 'overdue' : ''}`}>📅 {dueLabel(task.dueDate, due.daysLeft)}</span>}
         {task.archived && <span className="chip">Archived</span>}

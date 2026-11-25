@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db, type Group } from '../db';
-import { createGroup, GROUP_COLORS, useData } from '../data';
+import { createGroup, useData } from '../data';
 import { BackBar, ConfirmButton } from '../components/ui';
 
 function GroupName({ g }: { g: Group }) {
@@ -58,7 +58,6 @@ export default function Groups() {
           return (
             <div key={g.id}>
               <div className="item">
-                <span className="dot" style={{ width: 12, height: 12, borderRadius: '50%', background: g.color, flexShrink: 0, marginRight: 6 }} />
                 <GroupName g={g} />
                 <span className="faint" style={{ fontSize: 13, marginRight: 4 }}>{count}</span>
                 <button className="icon-btn" aria-label="Move up" disabled={i === 0} onClick={() => move(i, -1)}>↑</button>
@@ -67,12 +66,6 @@ export default function Groups() {
               </div>
               {open && (
                 <div style={{ padding: '4px 12px 14px' }}>
-                  <div className="swatches" style={{ marginBottom: 12 }}>
-                    {GROUP_COLORS.map((c) => (
-                      <button key={c} className={`swatch ${g.color === c ? 'on' : ''}`} style={{ background: c }} aria-label={`Colour ${c}`}
-                        onClick={() => db.groups.update(g.id, { color: c })} />
-                    ))}
-                  </div>
                   <div className="btn-row">
                     <button className="btn" onClick={() => nav(`/task/new?group=${g.id}`)}>+ Task</button>
                     <ConfirmButton armedText="Tap again" onConfirm={() => remove(g)}>Delete</ConfirmButton>

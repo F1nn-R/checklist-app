@@ -23,8 +23,8 @@ export function GroupedList({ data, tasks, storageKey, emptyText, children }: {
 
   const groupIds = new Set(data.groups.map((g) => g.id));
   const sections = [
-    ...data.groups.map((g) => ({ id: g.id, name: g.name, color: g.color, items: tasks.filter((t) => t.groupId === g.id) })),
-    { id: '_none', name: 'No group', color: 'var(--text-faint)', items: tasks.filter((t) => !t.groupId || !groupIds.has(t.groupId)) },
+    ...data.groups.map((g) => ({ id: g.id, name: g.name, items: tasks.filter((t) => t.groupId === g.id) })),
+    { id: '_none', name: 'No group', items: tasks.filter((t) => !t.groupId || !groupIds.has(t.groupId)) },
   ].filter((s) => s.items.length || (emptyText && s.id !== '_none'));
 
   const onlyUngrouped = sections.length === 1 && sections[0].id === '_none';
@@ -36,11 +36,12 @@ export function GroupedList({ data, tasks, storageKey, emptyText, children }: {
         return (
           <section key={s.id} className={onlyUngrouped ? 'group' : `group group-box glass ${open ? 'open' : ''}`}>
             {!onlyUngrouped && (
-              <button className="group-header" onClick={() => toggle(s.id)} aria-expanded={open}>
-                <span className={`chev ${open ? 'open' : ''}`}>▶</span>
-                <span className="dot" style={{ background: s.color }} />
-                {s.name}
+              <button className="group-header" onClick={() => toggle(s.id)} aria-expanded={open} aria-label={`${s.name}, ${s.items.length} tasks`}>
                 <span className="count">{s.items.length}</span>
+                <span className="name">{s.name}</span>
+                <span className={`chev-btn ${open ? 'open' : ''}`} aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
+                </span>
               </button>
             )}
             {(open || onlyUngrouped) && (

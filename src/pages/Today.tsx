@@ -1,7 +1,7 @@
 import { isDone, isDueTop, useData, useToday } from '../data';
 import { formatShort } from '../logic/dates';
 import { TaskRow } from '../components/TaskRow';
-import { AddButton, SideMenu } from '../components/ui';
+import { AddButton, ProgressTube, SideMenu } from '../components/ui';
 import { GroupedList } from '../components/GroupedList';
 
 /** Home page: today's tasks under every group (empty groups included). Other pages are in the side menu. */
@@ -11,7 +11,6 @@ export default function Today() {
 
   const due = data.tasks.filter((t) => !t.parentId && !t.archived && isDueTop(data, t, today));
   const doneCount = due.filter((t) => isDone(data, t, today)).length;
-  const pct = due.length ? Math.round((doneCount / due.length) * 100) : 0;
 
   return (
     <div className="page">
@@ -20,15 +19,7 @@ export default function Today() {
         <SideMenu />
       </div>
 
-      {due.length > 0 && (
-        <>
-          <div className="progress-label">
-            <span>{doneCount} of {due.length} done</span>
-            <span>{pct}%</span>
-          </div>
-          <div className="progress"><div style={{ width: `${pct}%` }} /></div>
-        </>
-      )}
+      {due.length > 0 && <ProgressTube done={doneCount} total={due.length} />}
 
       {data.ready && due.length === 0 && !data.groups.length && (
         <div className="empty">
