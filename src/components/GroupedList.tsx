@@ -36,7 +36,7 @@ export function GroupedList({ data, tasks, storageKey, emptyText, children }: {
         return (
           <section key={s.id} className={onlyUngrouped ? 'group' : `group group-box glass ${open ? 'open' : ''}`}>
             {!onlyUngrouped && (
-              <button className="group-header" onClick={() => toggle(s.id)} aria-expanded={open} aria-label={`${s.name}, ${s.items.length} tasks`}>
+              <button className="group-header" onClick={() => toggle(s.id)} aria-expanded={open} aria-label={`${s.name}, ${s.items.length} ${s.items.length === 1 ? 'task' : 'tasks'}`}>
                 <span className="count">{s.items.length}</span>
                 <span className="name">{s.name}</span>
                 <span className={`chev-btn ${open ? 'open' : ''}`} aria-hidden="true">

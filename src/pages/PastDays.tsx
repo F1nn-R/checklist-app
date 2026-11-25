@@ -22,9 +22,9 @@ export default function PastDays() {
     <div className="page no-nav">
       <BackBar title="Past days" />
       <div className="date-switch">
-        <button className="icon-btn" aria-label="Previous day" onClick={() => setOffset(offset - 1)}>‹</button>
+        <button className="glass-btn" aria-label="Previous day" onClick={() => setOffset(offset - 1)}>‹</button>
         <div className="label">{label}<small>{sub}</small></div>
-        <button className="icon-btn" aria-label="Next day" disabled={offset >= -1} onClick={() => setOffset(offset + 1)}>›</button>
+        <button className="glass-btn" aria-label="Next day" disabled={offset >= -1} onClick={() => setOffset(offset + 1)}>›</button>
       </div>
 
       {due.length > 0 && <ProgressTube done={doneCount} total={due.length} />}

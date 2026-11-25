@@ -15,7 +15,7 @@ export default function Today() {
   return (
     <div className="page">
       <div className="topbar">
-        <h1>{formatShort(today)}</h1>
+        <h1 className="date-title">{formatShort(today)}</h1>
         <SideMenu />
       </div>
 

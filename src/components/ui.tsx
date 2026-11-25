@@ -46,7 +46,7 @@ export function BackBar({ title, right }: { title?: string; right?: ReactNode })
   const nav = useNavigate();
   return (
     <div className="topbar">
-      <button className="icon-btn" aria-label="Back" onClick={() => (history.length > 1 ? nav(-1) : nav('/'))}>
+      <button className="glass-btn" aria-label="Back" onClick={() => (history.length > 1 ? nav(-1) : nav('/'))}>
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
       </button>
       <p className="title-sm">{title}</p>

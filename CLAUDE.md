@@ -37,6 +37,8 @@ Vite + React 19 + TypeScript, `vite-plugin-pwa` (Workbox, auto-update), Dexie + 
 - `src/data.ts`: `useData()` loads all groups, tasks and completions reactively into maps (personal-scale data, so this is fine). Helpers: `isDone`, `isDueTop`, `streakInfo`, `useToday` (refreshes at midnight/on focus).
 - `src/pages/`, `src/components/`: UI. `ConfirmButton` (tap twice) is used instead of `window.confirm`; keep it that way.
 - Per-viewer UI state (expanded tasks, collapsed groups) is in `localStorage`, wrapped in try/catch.
+- **Design:** animated WebGL plasma background (`src/shaders/plasma.frag`, `ShaderBackground.tsx`) behind "liquid glass" surfaces. Glass/colour tokens are in `:root` in `src/theme.css` (`--glass-*`, `--surface` is translucent, `--accent`/`--progress` sky blue). Text sitting directly on the background needs white text or a text-shadow to stay readable. Avoid nesting `backdrop-filter` (costly on phones).
+- **Fonts are self-hosted** via `@fontsource/*` (the home date uses Great Vibes), never a font CDN, so the app works offline and makes no third-party requests. `woff2` is in the Workbox `globPatterns`.
 
 ## Gotchas
 - **Schema changes:** add a new `this.version(n)` in `db.ts` with an upgrade function. Never edit version 1 in place, or installed copies break. Also bump `VERSION` in `src/backup.ts` and keep importing old backups working.
