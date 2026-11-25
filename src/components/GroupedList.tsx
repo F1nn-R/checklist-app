@@ -34,7 +34,7 @@ export function GroupedList({ data, tasks, storageKey, emptyText, children }: {
       {sections.map((s) => {
         const open = !collapsed.has(s.id);
         return (
-          <section key={s.id} className="group">
+          <section key={s.id} className={onlyUngrouped ? 'group' : `group group-box glass ${open ? 'open' : ''}`}>
             {!onlyUngrouped && (
               <button className="group-header" onClick={() => toggle(s.id)} aria-expanded={open}>
                 <span className={`chev ${open ? 'open' : ''}`}>▶</span>
@@ -43,7 +43,11 @@ export function GroupedList({ data, tasks, storageKey, emptyText, children }: {
                 <span className="count">{s.items.length}</span>
               </button>
             )}
-            {(open || onlyUngrouped) && (s.items.length ? s.items.map(children) : <p className="group-empty">{emptyText}</p>)}
+            {(open || onlyUngrouped) && (
+              <div className="group-body">
+                {s.items.length ? s.items.map(children) : <p className="group-empty">{emptyText}</p>}
+              </div>
+            )}
           </section>
         );
       })}

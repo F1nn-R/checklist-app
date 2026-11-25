@@ -46,7 +46,7 @@ export function TaskRow({ task, data, date, today, checkable = true, showRepeat 
   const setOpenPersist = (v: boolean) => { setOpen(v); saveExpanded(task.id, v); };
 
   return (
-    <div className="card">
+    <div className="card glass">
       <div className={`task-row ${done ? 'done' : ''}`}>
         <Checkbox on={done} disabled={!checkable} onToggle={() => toggle(db, task, date)} label={`Mark ${task.title} done`} />
         <button className="body" onClick={() => nav(`/task/${task.id}`)}>
