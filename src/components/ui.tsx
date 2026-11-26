@@ -58,12 +58,12 @@ export const TrashIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 002 2h6a2 2 0 002-2l1-12M9 7V4h6v3" /></svg>
 );
 
-/** Top bar with a back button. `menu={false}` hides the hamburger (task create/edit form). */
+/** Top bar whose back button always goes home (not to the previous page). `menu={false}` hides the hamburger (task create/edit form). */
 export function BackBar({ title, right, menu = true }: { title?: string; right?: ReactNode; menu?: boolean }) {
   const nav = useNavigate();
   return (
     <div className="topbar">
-      <button className="glass-btn" aria-label="Back" onClick={() => (history.length > 1 ? nav(-1) : nav('/'))}>
+      <button className="glass-btn" aria-label="Back" onClick={() => nav('/')}>
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
       </button>
       <p className="title-sm">{title}</p>
