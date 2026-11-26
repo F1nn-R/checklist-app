@@ -1,13 +1,17 @@
-import { useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from 'react';
-import { dropIndex } from '../logic/reorder';
+import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type MouseEvent, type PointerEvent } from 'react';
+import { dropTarget, type RowBox } from '../logic/reorder';
 
-/** Active drag: which row, where the finger started, how far it moved, and the row spacing. */
-interface Drag { from: number; startY: number; dy: number; pitch: number }
+/** Active drag: which row, where the finger started, how far it moved, and the measured rows. */
+interface Drag { from: number; startY: number; dy: number; rows: RowBox[]; gap: number }
+
+const HOLD_MS = 350; // how long to hold a row before it lifts
+const HOLD_SLOP = 8; // px the finger may wander during the hold before it counts as a scroll
 
 /**
- * Hold-and-drag reordering for a vertical list. Put `listRef` on the container and
- * `data-drag-item` on each row; spread `handleProps(i, label)` onto a <DragHandle>.
- * `onMove(from, to)` runs on drop (or arrow key on the handle).
+ * Drag-to-reorder for a vertical list. Put `listRef` on the container and `data-drag-item`
+ * on each row. Either spread `handleProps(i, label)` onto a <DragHandle> (drag starts at once),
+ * or spread `holdProps(i)` onto the row itself (drag starts after holding still, so normal
+ * scrolling and taps still work). `onMove(from, to)` runs on drop.
  */
 export function useDragReorder(count: number, onMove: (from: number, to: number) => void, onStart?: () => void) {
   const listRef = useRef<HTMLDivElement>(null);
@@ -15,7 +19,42 @@ export function useDragReorder(count: number, onMove: (from: number, to: number)
   const [drag, setDragState] = useState<Drag | null>(null);
   const dragRef = useRef<Drag | null>(null);
   const setDrag = (d: Drag | null) => { dragRef.current = d; setDragState(d); };
-  const target = drag ? dropIndex(drag.from, drag.dy, drag.pitch, count) : -1;
+  const target = drag ? dropTarget(drag.from, drag.dy, drag.rows) : -1;
+
+  // Hold-to-drag bookkeeping.
+  const hold = useRef<{ timer: number; x: number; y: number } | null>(null);
+  const suppressClick = useRef(false);
+  const cancelHold = () => { if (hold.current) { clearTimeout(hold.current.timer); hold.current = null; } };
+  useEffect(() => cancelHold, []);
+
+  // While a row is lifted, stop the page from scrolling under the finger (needs a non-passive listener).
+  const dragging = !!drag;
+  useEffect(() => {
+    if (!dragging) return;
+    const stop = (e: TouchEvent) => { if (e.cancelable) e.preventDefault(); };
+    document.addEventListener('touchmove', stop, { passive: false });
+    return () => document.removeEventListener('touchmove', stop);
+  }, [dragging]);
+
+  const lift = (index: number, startY: number) => {
+    onStart?.();
+    const els = listRef.current?.querySelectorAll<HTMLElement>('[data-drag-item]');
+    const rows = [...(els ?? [])].map((el) => { const r = el.getBoundingClientRect(); return { top: r.top, height: r.height }; });
+    const gap = rows.length > 1 ? Math.max(0, rows[1].top - rows[0].top - rows[0].height) : 0;
+    setDrag({ from: index, startY, dy: 0, rows, gap });
+    navigator.vibrate?.(8);
+  };
+  const move = (y: number) => {
+    const d = dragRef.current;
+    if (d) setDrag({ ...d, dy: y - d.startY });
+  };
+  const drop = (y: number) => {
+    const d = dragRef.current;
+    if (!d) return;
+    setDrag(null);
+    const to = dropTarget(d.from, y - d.startY, d.rows);
+    if (to !== d.from) onMove(d.from, to);
+  };
 
   const handleProps = (index: number, label: string) => ({
     'aria-label': `Reorder ${label} (drag, or use arrow keys)`,
@@ -24,25 +63,10 @@ export function useDragReorder(count: number, onMove: (from: number, to: number)
       e.preventDefault(); // no text selection / scrolling while dragging
       e.currentTarget.focus(); // preventDefault skips focus; keep it so arrow keys work after a tap
       e.currentTarget.setPointerCapture(e.pointerId);
-      onStart?.();
-      const rows = listRef.current?.querySelectorAll<HTMLElement>('[data-drag-item]');
-      const a = rows?.[0]?.getBoundingClientRect();
-      const b = rows?.[1]?.getBoundingClientRect();
-      const pitch = a && b ? b.top - a.top : (a?.height ?? 56);
-      setDrag({ from: index, startY: e.clientY, dy: 0, pitch });
-      navigator.vibrate?.(8);
+      lift(index, e.clientY);
     },
-    onPointerMove: (e: PointerEvent<HTMLButtonElement>) => {
-      const d = dragRef.current;
-      if (d) setDrag({ ...d, dy: e.clientY - d.startY });
-    },
-    onPointerUp: (e: PointerEvent<HTMLButtonElement>) => {
-      const d = dragRef.current;
-      if (!d) return;
-      setDrag(null);
-      const to = dropIndex(d.from, e.clientY - d.startY, d.pitch, count);
-      if (to !== d.from) onMove(d.from, to);
-    },
+    onPointerMove: (e: PointerEvent<HTMLButtonElement>) => move(e.clientY),
+    onPointerUp: (e: PointerEvent<HTMLButtonElement>) => drop(e.clientY),
     onPointerCancel: () => setDrag(null),
     onKeyDown: (e: KeyboardEvent<HTMLButtonElement>) => {
       const d = e.key === 'ArrowUp' ? -1 : e.key === 'ArrowDown' ? 1 : 0;
@@ -52,17 +76,51 @@ export function useDragReorder(count: number, onMove: (from: number, to: number)
     },
   });
 
-  /** Lifted row follows the finger; rows between start and target slide one place to make room. */
+  const holdProps = (index: number) => ({
+    onPointerDown: (e: PointerEvent<HTMLElement>) => {
+      suppressClick.current = false;
+      if (e.button !== 0 || count < 2) return;
+      cancelHold();
+      const el = e.currentTarget;
+      const { pointerId, clientX: x, clientY: y } = e;
+      hold.current = {
+        x, y,
+        timer: window.setTimeout(() => {
+          hold.current = null;
+          try { el.setPointerCapture(pointerId); } catch { /* pointer already gone */ }
+          suppressClick.current = true; // releasing after a hold must not open or tick the task
+          lift(index, y);
+        }, HOLD_MS),
+      };
+    },
+    onPointerMove: (e: PointerEvent<HTMLElement>) => {
+      const h = hold.current;
+      if (h && Math.hypot(e.clientX - h.x, e.clientY - h.y) > HOLD_SLOP) cancelHold(); // it's a scroll
+      move(e.clientY);
+    },
+    onPointerUp: (e: PointerEvent<HTMLElement>) => { cancelHold(); drop(e.clientY); },
+    onPointerCancel: () => { cancelHold(); setDrag(null); },
+    onClickCapture: (e: MouseEvent<HTMLElement>) => {
+      if (!suppressClick.current) return;
+      suppressClick.current = false;
+      e.preventDefault();
+      e.stopPropagation();
+    },
+    onContextMenu: (e: MouseEvent<HTMLElement>) => e.preventDefault(), // long-press menu on phones
+  });
+
+  /** Lifted row follows the finger; rows between start and target slide over to make room. */
   const itemStyle = (i: number): CSSProperties => {
     if (!drag) return {};
+    const shift = (drag.rows[drag.from]?.height ?? 0) + drag.gap;
     let y = 0;
     if (i === drag.from) y = drag.dy;
-    else if (drag.from < target && i > drag.from && i <= target) y = -drag.pitch;
-    else if (target < drag.from && i >= target && i < drag.from) y = drag.pitch;
+    else if (drag.from < target && i > drag.from && i <= target) y = -shift;
+    else if (target < drag.from && i >= target && i < drag.from) y = shift;
     return { transform: `translateY(${y}px)` };
   };
 
-  return { listRef, dragging: !!drag, isLifted: (i: number) => drag?.from === i, handleProps, itemStyle };
+  return { listRef, dragging, isLifted: (i: number) => drag?.from === i, handleProps, holdProps, itemStyle };
 }
 
 export function DragHandle(props: ReturnType<ReturnType<typeof useDragReorder>['handleProps']>) {

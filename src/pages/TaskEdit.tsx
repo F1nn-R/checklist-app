@@ -57,7 +57,7 @@ export default function TaskEdit() {
     setLoaded(true);
   }, [data.ready, loaded, existing, data.subtasksOf, data.groups, params]);
 
-  if (data.ready && id && !existing) return <div className="page no-nav"><BackBar /><div className="empty">Task not found.</div></div>;
+  if (data.ready && id && !existing) return <div className="page no-nav"><BackBar menu={false} /><div className="empty">Task not found.</div></div>;
 
   const isSub = !!parentId;
   const canSave = title.trim().length > 0;
@@ -133,6 +133,7 @@ export default function TaskEdit() {
   return (
     <div className="page no-nav">
       <BackBar
+        menu={false}
         title={isNew ? (isSub ? 'New subtask' : 'New task') : 'Edit task'}
         right={<button className="btn primary" disabled={!canSave} onClick={save}>Save</button>}
       />

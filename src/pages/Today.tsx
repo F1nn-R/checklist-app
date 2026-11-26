@@ -1,4 +1,4 @@
-import { isDone, isDueTop, useData, useToday } from '../data';
+import { isDone, isDueTop, reorderInGroup, useData, useToday } from '../data';
 import { formatShort } from '../logic/dates';
 import { TaskRow } from '../components/TaskRow';
 import { AddButton, ProgressTube, SideMenu } from '../components/ui';
@@ -33,7 +33,8 @@ export default function Today() {
         </div>
       )}
 
-      <GroupedList data={data} tasks={due} storageKey="today" emptyText="Nothing today">
+      <GroupedList data={data} tasks={due} storageKey="today" emptyText="Nothing today"
+        onReorder={(section, from, to) => reorderInGroup(data, section, from, to)}>
         {(t) => <TaskRow key={t.id} task={t} data={data} date={today} today={today} />}
       </GroupedList>
 

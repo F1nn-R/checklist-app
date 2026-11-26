@@ -92,7 +92,6 @@ export default function Groups() {
           onKeyDown={(e) => e.key === 'Enter' && add()} />
         <button className="btn primary" onClick={add} disabled={!name.trim()}>Add</button>
       </div>
-      {data.ready && groups.length > 1 && <p className="hint">Hold <b>⠿</b> and drag to reorder.</p>}
       {data.ready && !groups.length && <p className="muted">Groups organise your list, e.g. Morning, Health, Work.</p>}
     </div>
   );

@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { ChecklistDB, type Task } from '../db';
 import { addDays, formatShort } from './dates';
-import { dropIndex, moveItem } from './reorder';
+import { dropTarget, moveItem, placeSubset } from './reorder';
 import { dueStatus, isDueOn, ruleMatches } from './schedule';
 import { bestStreak, completionRate, currentStreak } from './streak';
 import { findCompletion, toggle } from './completion';
@@ -152,11 +152,23 @@ describe('reorder', () => {
     expect(moveItem(a, 1, 99)).toEqual(['a', 'c', 'd', 'b']);
     expect(a).toEqual(['a', 'b', 'c', 'd']);
   });
-  it('dropIndex rounds to the nearest row and clamps', () => {
-    expect(dropIndex(1, 0, 60, 4)).toBe(1);
-    expect(dropIndex(1, 29, 60, 4)).toBe(1);
-    expect(dropIndex(1, 31, 60, 4)).toBe(2);
-    expect(dropIndex(1, -200, 60, 4)).toBe(0);
-    expect(dropIndex(1, 500, 60, 4)).toBe(3);
+  it('dropTarget passes a row once the dragged edge crosses its middle', () => {
+    const even = [0, 60, 120, 180].map((top) => ({ top, height: 50 }));
+    expect(dropTarget(1, 0, even)).toBe(1);
+    expect(dropTarget(1, 34, even)).toBe(1);
+    expect(dropTarget(1, 36, even)).toBe(2);
+    expect(dropTarget(1, -200, even)).toBe(0);
+    expect(dropTarget(1, 500, even)).toBe(3);
+    // Uneven heights: a tall row (an expanded card) needs a longer drag to pass.
+    const uneven = [{ top: 0, height: 50 }, { top: 60, height: 200 }, { top: 270, height: 50 }];
+    expect(dropTarget(0, 100, uneven)).toBe(0);
+    expect(dropTarget(0, 140, uneven)).toBe(1);
+    expect(dropTarget(2, -150, uneven)).toBe(1);
+    expect(dropTarget(2, -260, uneven)).toBe(0);
+  });
+  it('placeSubset reorders a selection and leaves the rest in place', () => {
+    const [a, b, c, d, e] = ['a', 'b', 'c', 'd', 'e'].map((id) => ({ id }));
+    expect(placeSubset([a, b, c, d, e], [d, b]).map((t) => t.id)).toEqual(['a', 'd', 'c', 'b', 'e']);
+    expect(placeSubset([a, b, c], [a, b, c])).toEqual([a, b, c]);
   });
 });

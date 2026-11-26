@@ -17,8 +17,9 @@ Vite + React 19 + TypeScript, `vite-plugin-pwa` (Workbox, auto-update), Dexie + 
 - **Task fields:** title, description (shown in lists) and **full info** (plain text, no Markdown: too clunky on a phone; shown *only* on the task detail page). No placeholder/example text in the task form's boxes.
 - **Start date** is an off-by-default toggle; when off the task starts on the day it was created.
 - **Due date** (optional toggle) exists for **one-off tasks only**: a "Due …" label, red when overdue. It doesn't affect when the task shows.
-- **Navigation:** no bottom bar. The home page (today) is the only top-level page; a hamburger (top right) opens a sidebar from the right with Past days, All tasks, Archived, Groups and Settings.
+- **Navigation:** no bottom bar. The home page (today) is the only top-level page; a hamburger (top right, on every page except the task create/edit form) opens a sidebar from the right with Past days, All tasks, Archived, Groups and Settings.
 - **Home page** shows only today (no day arrows), titled with the date as `dd.mm.yy`. Every group is shown, even with nothing due today. The **+** button offers "New task" or "New group". There is no browsing of future days; only start/due dates look ahead.
+- **Reordering:** tasks on the home page are reordered by holding a card and dragging it (no handle), within their group only. Group boxes on the home page aren't draggable; groups are reordered on the Groups page with drag handles. Subtasks use handles in the task form. All share `useDragReorder` in `src/components/DragReorder.tsx`.
 - **All tasks / Archived** (sidebar) are the way to reach tasks not scheduled today and archived tasks.
 - **Checked one-off tasks** show archive and delete icon buttons on their row (delete is two-tap).
 - **Repeats:** once, daily, chosen weekdays, every N days (from the start date) or monthly (day 29–31 clamps to the month's last day).
@@ -73,4 +74,4 @@ Even then: **secrets never go in the repo, public or private.** Use environment 
 2. **Change, improve and add features.** Specifics will come from the user. Check new ideas against the product rules above and confirm any change to them.
 3. **Persistent storage (agreed, not built yet).** Call `navigator.storage.persist()` at startup (e.g. in `src/main.tsx`, guarded with `?.` and wrapped in try/catch) so the browser doesn't evict IndexedDB when the phone runs low on storage. It doesn't stop the user from clearing site data manually. Optionally show the result in Settings ("Storage: protected / not protected").
 
-Ideas raised earlier but **not** requested (don't build unprompted): reminders/notifications, drag-to-reorder (currently ↑/↓ buttons), a weekly overview, "skip day" for streaks, cloud sync.
+Ideas raised earlier but **not** requested (don't build unprompted): reminders/notifications, a weekly overview, "skip day" for streaks, cloud sync.

@@ -3,6 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db, newId, type Completion, type Group, type Task } from './db';
 import { todayStr, type DateStr } from './logic/dates';
 import { effective, isDueOn } from './logic/schedule';
+import { moveItem, placeSubset } from './logic/reorder';
 import { bestStreak, completionRate, currentStreak } from './logic/streak';
 
 export interface AppData {
@@ -102,4 +103,19 @@ export async function createGroup(name: string, existing: Group[]): Promise<void
     id: newId(), name: n, color: GROUP_COLORS[existing.length % GROUP_COLORS.length],
     order: existing.length ? Math.max(...existing.map((g) => g.order)) + 1 : 0, archived: false,
   });
+}
+
+/**
+ * Moves a task within the shown list of its group (`section`, e.g. today's tasks) and saves the
+ * new order. Tasks of that group that aren't shown keep their places.
+ */
+export async function reorderInGroup(data: AppData, section: Task[], from: number, to: number): Promise<void> {
+  const groupIds = new Set(data.groups.map((g) => g.id));
+  const groupOf = (t: Task) => (t.groupId && groupIds.has(t.groupId) ? t.groupId : null);
+  const g = section[from] ? groupOf(section[from]) : null;
+  const full = data.tasks.filter((t) => !t.parentId && groupOf(t) === g); // already sorted by order
+  const next = placeSubset(full, moveItem(section, from, to));
+  await db.transaction('rw', db.tasks, () =>
+    Promise.all(next.map((t, i) => (t.order === i ? null : db.tasks.update(t.id, { order: i })))),
+  );
 }

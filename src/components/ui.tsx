@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useId, useState, type ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { db } from '../db';
 import { createGroup } from '../data';
 
@@ -58,7 +58,8 @@ export const TrashIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 002 2h6a2 2 0 002-2l1-12M9 7V4h6v3" /></svg>
 );
 
-export function BackBar({ title, right }: { title?: string; right?: ReactNode }) {
+/** Top bar with a back button. `menu={false}` hides the hamburger (task create/edit form). */
+export function BackBar({ title, right, menu = true }: { title?: string; right?: ReactNode; menu?: boolean }) {
   const nav = useNavigate();
   return (
     <div className="topbar">
@@ -67,6 +68,7 @@ export function BackBar({ title, right }: { title?: string; right?: ReactNode })
       </button>
       <p className="title-sm">{title}</p>
       {right}
+      {menu && <SideMenu />}
     </div>
   );
 }
@@ -114,6 +116,7 @@ function useOverlay(open: boolean, close: () => void) {
 /** Hamburger button that slides a navigation panel in from the right. */
 export function SideMenu() {
   const nav = useNavigate();
+  const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
   const close = useCallback(() => setOpen(false), []);
   useOverlay(open, close);
@@ -134,7 +137,8 @@ export function SideMenu() {
           </button>
         </div>
         {items.map(([to, icon, label]) => (
-          <button key={to} type="button" className="drawer-item" onClick={() => { setOpen(false); nav(to); }}>
+          <button key={to} type="button" className="drawer-item" aria-current={pathname === to ? 'page' : undefined}
+            onClick={() => { setOpen(false); if (pathname !== to) nav(to); }}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{icons[icon]}</svg>
             {label}
           </button>

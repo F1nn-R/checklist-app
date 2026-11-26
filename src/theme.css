@@ -91,11 +91,16 @@ a { color: var(--accent); }
   position: fixed; z-index: 31;
   right: max(16px, calc(50vw - 320px + 16px));
   bottom: calc(env(safe-area-inset-bottom) + 88px);
-  min-width: 170px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; padding: 4px;
+  min-width: 170px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 14px; padding: 6px;
+  display: flex; flex-direction: column; gap: 6px;
   box-shadow: 0 8px 24px rgb(0 0 0 / 0.5);
 }
-.add-menu button { display: block; width: 100%; text-align: left; background: none; border: none; padding: 12px 14px; border-radius: 8px; font-weight: 500; }
-.add-menu button:active { background: rgb(255 255 255 / 0.10); }
+.add-menu button {
+  display: block; width: 100%; text-align: left; padding: 12px 14px; border-radius: 10px; font-weight: 500;
+  background: rgb(255 255 255 / 0.05); border: 1px solid var(--glass-edge);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.14);
+}
+.add-menu button:active { background: rgb(255 255 255 / 0.12); }
 .fab.open { z-index: 32; }
 .sheet {
   position: fixed; z-index: 33; left: 50%; transform: translateX(-50%);
@@ -129,6 +134,7 @@ a { color: var(--accent); }
   text-align: left; font-size: 16px; font-weight: 500;
 }
 .drawer-item svg { width: 22px; height: 22px; color: var(--progress); flex-shrink: 0; }
+.drawer-item[aria-current="page"] { background: rgb(255 255 255 / 0.08); }
 .drawer-item:active { background: rgb(255 255 255 / 0.10); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.16); }
 
 /* ---------- Date switcher & progress ---------- */
@@ -370,6 +376,15 @@ a { color: var(--accent); }
 .reorderable.dragging [data-drag-item].lifted {
   transition: none; z-index: 2; scale: 1.02;
   border-color: color-mix(in srgb, var(--accent) 60%, transparent);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.3), 0 18px 40px rgb(0 0 0 / 0.5), 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+/* Home page: hold a task card to lift it (no handle). */
+.drag-row + .drag-row { margin-top: 8px; }
+.reorderable .drag-row { -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
+.reorderable.dragging .drag-row.lifted { scale: 1.02; }
+.reorderable.dragging .drag-row.lifted > .card {
+  border-color: color-mix(in srgb, var(--accent) 60%, transparent);
+  background: var(--glass-sheen), rgb(14 16 22 / 0.85);
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.3), 0 18px 40px rgb(0 0 0 / 0.5), 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
 }
 /* Subtask rows are see-through inside their list; give the lifted one its own glass so it reads above the rest. */
