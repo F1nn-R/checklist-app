@@ -2,7 +2,7 @@ import { db, type Completion, type Group, type Task } from './db';
 import { todayStr } from './logic/dates';
 
 const FORMAT = 'checklist-backup';
-const VERSION = 2; // v2: tasks have `dueDate`
+const VERSION = 3; // v2: tasks have `dueDate`; v3: tasks have `misc`
 
 export interface Backup {
   format: typeof FORMAT;
@@ -57,7 +57,7 @@ export async function importBackup(b: Backup): Promise<void> {
   await db.transaction('rw', db.groups, db.tasks, db.completions, async () => {
     await Promise.all([db.groups.clear(), db.tasks.clear(), db.completions.clear()]);
     await db.groups.bulkAdd(b.groups);
-    await db.tasks.bulkAdd(b.tasks.map((t) => ({ ...t, dueDate: t.dueDate ?? null })));
+    await db.tasks.bulkAdd(b.tasks.map((t) => ({ ...t, dueDate: t.dueDate ?? null, misc: !!t.misc })));
     await db.completions.bulkAdd(b.completions.map((c) => ({ ...c, auto: !!c.auto })));
   });
 }

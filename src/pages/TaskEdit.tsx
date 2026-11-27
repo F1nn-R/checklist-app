@@ -32,6 +32,7 @@ export default function TaskEdit() {
   const [startDate, setStartDate] = useState(todayStr());
   const [dueOn, setDueOn] = useState(false);
   const [dueDate, setDueDate] = useState(todayStr());
+  const [misc, setMisc] = useState(false);
   const [subs, setSubs] = useState<SubDraft[]>([]);
   // Hook stays above the early "not found" return below.
   const subDnd = useDragReorder(subs.length, (from, to) => setSubs((cur) => moveItem(cur, from, to)));
@@ -50,6 +51,7 @@ export default function TaskEdit() {
       setStartDate(existing.startDate);
       setStartOn(existing.startDate !== toDateStr(new Date(existing.createdAt)));
       if (existing.dueDate) { setDueOn(true); setDueDate(existing.dueDate); }
+      setMisc(!!existing.misc);
       setSubs((data.subtasksOf.get(existing.id) ?? []).map((s) => ({ id: s.id, title: s.title, isNew: false })));
     } else if (!params.get('group') && data.groups.length === 1) {
       setGroupId(data.groups[0].id);
@@ -84,7 +86,7 @@ export default function TaskEdit() {
     const siblings = data.tasks.filter((t) => t.parentId === (parentId ?? null));
     const base: Task = existing ?? {
       id: taskId, parentId: parentId ?? null, groupId: null, title: '', description: '', info: '',
-      repeat: null, startDate: effStart, dueDate: null, order: siblings.length ? Math.max(...siblings.map((t) => t.order)) + 1 : 0,
+      repeat: null, startDate: effStart, dueDate: null, misc: false, order: siblings.length ? Math.max(...siblings.map((t) => t.order)) + 1 : 0,
       archived: false, createdAt: Date.now(),
     };
     const task: Task = {
@@ -96,6 +98,7 @@ export default function TaskEdit() {
       repeat: isSub ? null : repeat,
       startDate: isSub ? base.startDate : effStart,
       dueDate: isSub ? null : effDue,
+      misc: !isSub && !repeat && misc, // one-off tasks only
     };
     await db.transaction('rw', db.tasks, db.completions, async () => {
       await db.tasks.put(task);
@@ -106,7 +109,7 @@ export default function TaskEdit() {
           await db.tasks.put({
             ...(prev ?? {
               id: s.id, parentId: taskId, description: '', info: '', repeat: null,
-              startDate: task.startDate, dueDate: null, archived: false, createdAt: Date.now(),
+              startDate: task.startDate, dueDate: null, misc: false, archived: false, createdAt: Date.now(),
             }),
             title: s.title, order: i, groupId: task.groupId,
           } as Task);
@@ -185,6 +188,16 @@ export default function TaskEdit() {
                 <Switch on={dueOn} onChange={toggleDue} label="Set a due date" />
               </div>
               {dueOn && <input id="due" className="input" type="date" value={dueDate} min={effStart} onChange={(e) => e.target.value && setDueDate(e.target.value)} />}
+            </div>
+          )}
+
+          {!repeat && (
+            <div className="field">
+              <div className="toggle-row">
+                <span>Misc. task</span>
+                <Switch on={misc} onChange={setMisc} label="Misc. task" />
+              </div>
+              <div className="hint">Doesn't count towards the progress bar.</div>
             </div>
           )}
 

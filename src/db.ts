@@ -25,6 +25,7 @@ export interface Task {
   repeat: RepeatRule | null; // null => one-off. Ignored on subtasks (they follow the parent)
   startDate: DateStr;
   dueDate: DateStr | null; // optional deadline; one-off top-level tasks only (added in schema v2)
+  misc: boolean; // one-off top-level only: left out of the progress bar (added in schema v3)
   order: number;
   archived: boolean;
   createdAt: number;
@@ -54,6 +55,12 @@ export class ChecklistDB extends Dexie {
     this.version(2).stores({}).upgrade((tx) =>
       tx.table('tasks').toCollection().modify((t: Partial<Task>) => {
         if (t.dueDate === undefined) t.dueDate = null;
+      }),
+    );
+    // v3: tasks gain `misc` (not indexed).
+    this.version(3).stores({}).upgrade((tx) =>
+      tx.table('tasks').toCollection().modify((t: Partial<Task>) => {
+        if (t.misc === undefined) t.misc = false;
       }),
     );
   }

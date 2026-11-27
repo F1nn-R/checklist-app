@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { ChecklistDB, type Task } from '../db';
 import { addDays, formatShort } from './dates';
 import { dropTarget, moveItem, placeSubset } from './reorder';
-import { dueStatus, isDueOn, ruleMatches } from './schedule';
+import { countsForProgress, dueStatus, isDueOn, ruleMatches } from './schedule';
 import { bestStreak, completionRate, currentStreak } from './streak';
 import { findCompletion, toggle } from './completion';
 
@@ -53,8 +53,18 @@ describe('due dates', () => {
   });
 });
 
+describe('progress', () => {
+  const t = (over: Partial<Task>) => ({ repeat: null, parentId: null, misc: false, ...over }) as Task;
+  it('misc one-off tasks are left out of progress', () => {
+    expect(countsForProgress(t({}))).toBe(true);
+    expect(countsForProgress(t({ misc: true }))).toBe(false);
+    // misc only applies to one-off tasks
+    expect(countsForProgress(t({ misc: true, repeat: { kind: 'daily' } }))).toBe(true);
+  });
+});
+
 describe('schema upgrade', () => {
-  it('v1 tasks get dueDate: null', async () => {
+  it('v1 tasks get dueDate: null and misc: false', async () => {
     const name = 'upgrade-test-' + Math.random();
     const { default: Dexie } = await import('dexie');
     const v1 = new Dexie(name);
@@ -63,6 +73,7 @@ describe('schema upgrade', () => {
     v1.close();
     const db2 = new ChecklistDB(name);
     expect((await db2.tasks.get('a'))?.dueDate).toBeNull();
+    expect((await db2.tasks.get('a'))?.misc).toBe(false);
     db2.close();
   });
 });
@@ -96,7 +107,7 @@ describe('completion / auto-tick', () => {
   let db: ChecklistDB;
   const day = '2026-11-19';
   const mk = (id: string, parentId: string | null, repeat: Task['repeat'] = { kind: 'daily' }): Task => ({
-    id, parentId, groupId: null, title: id, description: '', info: '', repeat, startDate: '2026-11-01', dueDate: null,
+    id, parentId, groupId: null, title: id, description: '', info: '', repeat, startDate: '2026-11-01', dueDate: null, misc: false,
     order: 0, archived: false, createdAt: 0,
   });
   let parent: Task, a: Task, b: Task;

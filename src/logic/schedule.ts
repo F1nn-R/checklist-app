@@ -64,3 +64,8 @@ export function dueStatus(task: Task, today: DateStr, done: boolean): { daysLeft
   const daysLeft = diffDays(today, task.dueDate);
   return { daysLeft, overdue: !done && daysLeft < 0 };
 }
+
+/** Whether a top-level task counts towards the day's progress bar. Misc. one-off tasks don't. */
+export function countsForProgress(task: Task): boolean {
+  return !(task.misc && !task.repeat);
+}
